@@ -26,7 +26,7 @@
             padding: 0;
             height: 100vh;
             width: 100vw;
-            overflow: hidden; /* Скрывает скроллбар основного документа */
+            overflow: hidden;
             box-sizing: border-box;
         }
         
@@ -34,45 +34,91 @@
         .iframe-container {
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Ключевое свойство для обрезки контента */
+            overflow: hidden;
             position: relative;
         }
 
         /* Сам встроенный контент (iframe) */
         .iframe-container iframe {
             width: 100%;
-            height: calc(100% + 48px); /* Увеличиваем высоту iframe на высоту баннера (48px) */
+            height: calc(100% + 48px);
             border: none;
             position: absolute;
-            top: -48px; /* Сдвигаем содержимое iframe вверх на 48px для скрытия баннера */
+            top: -48px;
             left: 0;
-            /* Убедитесь, что встроенное приложение может прокручиваться, если оно длинное */
             overflow: auto; 
+        }
+        
+        /* Скрываем iframe по умолчанию */
+        .iframe-container {
+            display: none;
+        }
+        
+        /* Показываем редирект по умолчанию */
+        .redirect-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="iframe-container">
+    <!-- Сообщение о редиректе (показывается в браузере) -->
+    <div class="redirect-message" id="redirectMessage">
+        <div>
+            <h2>ПЕРЕЦ - кафе-столовая</h2>
+            <p>Перенаправляем на основную страницу...</p>
+        </div>
+    </div>
+    
+    <!-- Iframe с Figma проектом (показывается в PWA) -->
+    <div class="iframe-container" id="figmaContainer">
         <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая с доставкой от 30 минут"></iframe>
     </div>
 
-    <!-- Регистрация Service Worker для PWA -->
+    <!-- Регистрация Service Worker и логика переключения -->
     <script>
+        // Функция проверки полноэкранного режима
+        function isRunningInPWA() {
+            return window.navigator.standalone || 
+                   window.matchMedia('(display-mode: standalone)').matches ||
+                   document.referrer.includes('android-app://');
+        }
+        
+        // Основная логика
+        function initApp() {
+            if (isRunningInPWA()) {
+                // Запущено в полноэкранном режиме - показываем Figma
+                document.getElementById('figmaContainer').style.display = 'block';
+                document.getElementById('redirectMessage').style.display = 'none';
+                console.log('Запущено в PWA режиме - показываем Figma');
+            } else {
+                // Запущено в браузере - редирект на Tilda
+                console.log('Запущено в браузере - редирект на Tilda');
+                window.location.href = 'https://perecinstructions.tilda.ws';
+            }
+        }
+        
+        // Регистрация Service Worker для PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
-                        console.log('PWA готов к работе! Scope:', registration.scope);
+                        console.log('PWA готов к работе!');
+                        initApp(); // Запускаем основную логику после регистрации SW
                     })
                     .catch(function(error) {
                         console.log('Ошибка регистрации PWA:', error);
+                        initApp(); // Все равно запускаем логику даже при ошибке
                     });
             });
-        }
-        
-        // Дополнительная проверка для iOS
-        if (window.navigator.standalone) {
-            console.log('Запущено в полноэкранном режиме iOS');
+        } else {
+            // Если Service Worker не поддерживается, все равно запускаем логику
+            initApp();
         }
     </script>
 </body>
