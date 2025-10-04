@@ -14,9 +14,6 @@
     <meta name="apple-mobile-web-app-title" content="ПЕРЕЦ">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     
-    <!-- Для Windows -->
-    <meta name="msapplication-TileColor" content="#ff0000">
-    
     <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
     
     <style>
@@ -105,29 +102,26 @@
             flex-shrink: 0;
         }
         
-        .step-text {
-            flex: 1;
-        }
-        
-        .add-button {
-            background: #ff0000;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(255,0,0,0.3);
-        }
-        
         .hidden {
             display: none;
+        }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
+    <div class="debug-info" id="debugInfo">Загрузка...</div>
+
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
         <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая"></iframe>
@@ -155,26 +149,33 @@
                 <div class="step-number">3</div>
                 <div class="step-text">Запускайте как полноценное приложение</div>
             </div>
-            
-            <button class="add-button" onclick="showInstallPrompt()">Добавить на главный экран</button>
         </div>
     </div>
 
     <script>
-        // Проверяем, запущено ли в PWA режиме
+        // Упрощенная проверка PWA режима
         function isPWA() {
-            return window.navigator.standalone || 
-                   window.matchMedia('(display-mode: standalone)').matches;
-        }
-        
-        // Показ подсказки для добавления
-        function showInstallPrompt() {
-            alert('Нажмите кнопку "Поделиться" 📤 и выберите "На экран домой"');
+            // Для iOS
+            if (window.navigator.standalone) {
+                return true;
+            }
+            
+            // Для других устройств
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                return true;
+            }
+            
+            return false;
         }
         
         // Основная логика отображения
         function initApp() {
-            if (isPWA()) {
+            const isPwaMode = isPWA();
+            const debugInfo = document.getElementById('debugInfo');
+            
+            debugInfo.textContent = `Режим: ${isPwaMode ? 'PWA' : 'Браузер'}`;
+            
+            if (isPwaMode) {
                 // PWA режим - показываем Figma проект
                 document.getElementById('figmaContainer').style.display = 'block';
                 document.getElementById('instructionsContainer').classList.add('hidden');
@@ -187,22 +188,23 @@
             }
         }
         
-        // Регистрация Service Worker
+        // Простой Service Worker для теста
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('Service Worker зарегистрирован');
-                        initApp();
-                    })
-                    .catch(function(error) {
-                        console.log('Ошибка Service Worker:', error);
-                        initApp();
-                    });
-            });
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => {
+                    console.log('SW registered');
+                    initApp();
+                })
+                .catch(() => {
+                    console.log('SW failed');
+                    initApp();
+                });
         } else {
             initApp();
         }
+        
+        // На всякий случай повторная инициализация через секунду
+        setTimeout(initApp, 1000);
     </script>
 </body>
 </html>
