@@ -99,10 +99,16 @@
                 document.getElementById('instructionsContainer').classList.add('hidden');
                 console.log('PWA режим - показываем Figma проект');
             } else {
-                // Браузерный режим - показываем инструкции
+                // Браузерный режим - показываем инструкции в IFRAME
                 document.getElementById('figmaContainer').classList.add('hidden');
                 document.getElementById('instructionsContainer').style.display = 'block';
-                console.log('Браузерный режим - показываем инструкции');
+                console.log('Браузерный режим - показываем инструкции в iframe');
+                
+                // Убедимся что iframe загрузил правильный URL
+                const iframe = document.querySelector('.instructions-iframe');
+                if (iframe.src !== 'https://perecinstructions.tilda.ws') {
+                    iframe.src = 'https://perecinstructions.tilda.ws';
+                }
             }
         }
         
