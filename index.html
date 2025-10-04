@@ -17,13 +17,22 @@
     <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
     
     <style>
+        /* Подключаем шрифт */
+        @font-face {
+            font-family: 'Seenonim';
+            src: url('/fonts/seenonim-v1.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Seenonim', Arial, sans-serif;
             background: linear-gradient(135deg, #ff0000, #cc0000);
             color: white;
         }
@@ -75,10 +84,11 @@
             background: white;
             color: #333;
             padding: 30px;
-            border-radius: 20px;
+            border-radius: 0; /* Убрано скругление */
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             max-width: 400px;
             width: 100%;
+            font-family: 'Seenonim', Arial, sans-serif;
         }
         
         .instruction-step {
@@ -93,13 +103,14 @@
             color: white;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
+            border-radius: 0; /* Убрано скругление */
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             margin-right: 15px;
             flex-shrink: 0;
+            font-family: 'Seenonim', Arial, sans-serif;
         }
         
         .step-text {
@@ -112,12 +123,13 @@
             color: #666;
             border: 1px solid #ddd;
             padding: 10px 20px;
-            border-radius: 20px;
+            border-radius: 0; /* Убрано скругление */
             font-size: 0.9em;
             cursor: pointer;
             margin-top: 15px;
             text-decoration: none;
             display: inline-block;
+            font-family: 'Seenonim', Arial, sans-serif;
         }
         
         .hidden {
