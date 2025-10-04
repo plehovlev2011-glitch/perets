@@ -102,6 +102,24 @@
             flex-shrink: 0;
         }
         
+        .step-text {
+            flex: 1;
+            font-size: 0.95em;
+        }
+        
+        .android-button {
+            background: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 15px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
         .hidden {
             display: none;
         }
@@ -110,17 +128,14 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.7);
             color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
+            font-size: 16px;
             z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info" id="debugInfo">Загрузка...</div>
+    <div class="debug-info" id="debugInfo">.</div>
 
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
@@ -130,25 +145,29 @@
     <!-- Контейнер с инструкциями (для браузерного режима) -->
     <div class="instructions-container" id="instructionsContainer">
         <div class="logo">ПЕРЕЦ</div>
-        <div class="slogan">Кафе-столовая с доставкой от 30 минут</div>
+        <div class="slogan">кафе-столовая с доставкой от 30 минут</div>
         
         <div class="instruction-card">
-            <h2>Добавьте приложение на главный экран</h2>
+            <h2 style="font-size: 1.3em; margin-bottom: 25px;">остался всего один шаг, чтобы установить приложение ПЕРЕЦ на ваш айфон</h2>
             
             <div class="instruction-step">
                 <div class="step-number">1</div>
-                <div class="step-text">Нажмите кнопку "Поделиться" в браузере</div>
+                <div class="step-text">нажмите кнопку "поделиться" в браузере</div>
             </div>
             
             <div class="instruction-step">
                 <div class="step-number">2</div>
-                <div class="step-text">Выберите "На экран домой"</div>
+                <div class="step-text">выберите "на экран домой"</div>
             </div>
             
             <div class="instruction-step">
                 <div class="step-number">3</div>
-                <div class="step-text">Запускайте как полноценное приложение</div>
+                <div class="step-text">нажмите "добавить". приложение установится и появится на главном экране</div>
             </div>
+            
+            <a href="https://www.rustore.ru/catalog/app/co.median.android.dyrbaxe" class="android-button">
+                у меня андроид
+            </a>
         </div>
     </div>
 
@@ -173,18 +192,16 @@
             const isPwaMode = isPWA();
             const debugInfo = document.getElementById('debugInfo');
             
-            debugInfo.textContent = `Режим: ${isPwaMode ? 'PWA' : 'Браузер'}`;
+            debugInfo.textContent = isPwaMode ? '..' : '.';
             
             if (isPwaMode) {
                 // PWA режим - показываем Figma проект
                 document.getElementById('figmaContainer').style.display = 'block';
                 document.getElementById('instructionsContainer').classList.add('hidden');
-                console.log('PWA режим - показываем Figma проект');
             } else {
                 // Браузерный режим - показываем инструкции
                 document.getElementById('figmaContainer').classList.add('hidden');
                 document.getElementById('instructionsContainer').style.display = 'flex';
-                console.log('Браузерный режим - показываем инструкции');
             }
         }
         
@@ -192,11 +209,9 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
                 .then(() => {
-                    console.log('SW registered');
                     initApp();
                 })
                 .catch(() => {
-                    console.log('SW failed');
                     initApp();
                 });
         } else {
