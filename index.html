@@ -3,7 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Приложение без баннера Figma Make</title>
+    
+    <!-- PWA настройки -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ff0000">
+    
+    <!-- Настройки для Apple iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ПЕРЕЦ">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    
+    <!-- Для Windows -->
+    <meta name="msapplication-TileColor" content="#ff0000">
+    
+    <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
+    
     <style>
         /* Общие сбросы для чистого отображения на весь экран */
         body {
@@ -38,7 +53,27 @@
 </head>
 <body>
     <div class="iframe-container">
-        <iframe src="https://ascii-donut-72130862.figma.site/" title="Приложение Figma Make без верхнего баннера"></iframe>
+        <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая с доставкой от 30 минут"></iframe>
     </div>
+
+    <!-- Регистрация Service Worker для PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('PWA готов к работе! Scope:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Ошибка регистрации PWA:', error);
+                    });
+            });
+        }
+        
+        // Дополнительная проверка для iOS
+        if (window.navigator.standalone) {
+            console.log('Запущено в полноэкранном режиме iOS');
+        }
+    </script>
 </body>
 </html>
