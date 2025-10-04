@@ -1,25 +1,138 @@
-{
-  "short_name": "ПЕРЕЦ",
-  "name": "ПЕРЕЦ - кафе-столовая с доставкой от 30 минут",
-  "description": "Кафе-столовая ПЕРЕЦ с быстрой доставкой от 30 минут",
-  "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "start_url": "/",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#ff0000",
-  "orientation": "portrait-primary"
-}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA настройки -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ff0000">
+    
+    <!-- Настройки для Apple iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ПЕРЕЦ">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    
+    <!-- Для Windows -->
+    <meta name="msapplication-TileColor" content="#ff0000">
+    
+    <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Стили для Figma контейнера (PWA режим) */
+        .figma-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            display: none; /* Скрыт по умолчанию */
+        }
+
+        .figma-container iframe {
+            width: 100%;
+            height: calc(100% + 48px);
+            border: none;
+            position: absolute;
+            top: -48px;
+            left: 0;
+        }
+        
+        /* Стили для инструкций (браузерный режим) */
+        .instructions-container {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+        
+        .instructions-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Контейнер с Figma проектом (для PWA режима) -->
+    <div class="figma-container" id="figmaContainer">
+        <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая"></iframe>
+    </div>
+    
+    <!-- Контейнер с инструкциями (для браузерного режима) -->
+    <div class="instructions-container" id="instructionsContainer">
+        <iframe class="instructions-iframe" src="https://perecinstructions.tilda.ws" title="Инструкция по добавлению"></iframe>
+    </div>
+
+    <script>
+        // Проверяем, запущено ли в PWA режиме
+        function isPWA() {
+            // Проверка для iOS
+            if (window.navigator.standalone) return true;
+            
+            // Проверка для Android и других
+            if (window.matchMedia('(display-mode: standalone)').matches) return true;
+            
+            // Проверка по referrer (Android)
+            if (document.referrer.includes('android-app://')) return true;
+            
+            return false;
+        }
+        
+        // Основная логика отображения
+        function initApp() {
+            if (isPWA()) {
+                // PWA режим - показываем Figma проект
+                document.getElementById('figmaContainer').style.display = 'block';
+                document.getElementById('instructionsContainer').classList.add('hidden');
+                console.log('PWA режим - показываем Figma проект');
+            } else {
+                // Браузерный режим - показываем инструкции в IFRAME
+                document.getElementById('figmaContainer').classList.add('hidden');
+                document.getElementById('instructionsContainer').style.display = 'block';
+                console.log('Браузерный режим - показываем инструкции в iframe');
+                
+                // Убедимся что iframe загрузил правильный URL
+                const iframe = document.querySelector('.instructions-iframe');
+                if (iframe.src !== 'https://perecinstructions.tilda.ws') {
+                    iframe.src = 'https://perecinstructions.tilda.ws';
+                }
+            }
+        }
+        
+        // Регистрация Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker зарегистрирован');
+                        initApp();
+                    })
+                    .catch(function(error) {
+                        console.log('Ошибка Service Worker:', error);
+                        initApp();
+                    });
+            });
+        } else {
+            initApp();
+        }
+        
+        // Дополнительная проверка при изменении размера окна
+        window.addEventListener('resize', function() {
+            setTimeout(initApp, 100);
+        });
+    </script>
+</body>
+</html>
