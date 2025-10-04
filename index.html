@@ -73,7 +73,7 @@
     
     <!-- Контейнер с инструкциями (для браузерного режима) -->
     <div class="instructions-container" id="instructionsContainer">
-        <iframe class="instructions-iframe" src="https://google.com/" title="Инструкция по добавлению"></iframe>
+        <iframe class="instructions-iframe" src="https://b24-scxt7h.bitrix24site.ru/" title="Инструкция по добавлению приложения"></iframe>
     </div>
 
     <script>
@@ -102,12 +102,12 @@
                 // Браузерный режим - показываем инструкции в IFRAME
                 document.getElementById('figmaContainer').classList.add('hidden');
                 document.getElementById('instructionsContainer').style.display = 'block';
-                console.log('Браузерный режим - показываем инструкции в iframe');
+                console.log('Браузерный режим - показываем инструкции Bitrix24');
                 
                 // Убедимся что iframe загрузил правильный URL
                 const iframe = document.querySelector('.instructions-iframe');
-                if (iframe.src !== 'https://perecinstructions.tilda.ws') {
-                    iframe.src = 'https://perecinstructions.tilda.ws';
+                if (iframe.src !== 'https://b24-scxt7h.bitrix24site.ru/') {
+                    iframe.src = 'https://b24-scxt7h.bitrix24site.ru/';
                 }
             }
         }
@@ -136,4 +136,3 @@
     </script>
 </body>
 </html>
-
