@@ -20,107 +20,113 @@
     <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
     
     <style>
-        /* Общие сбросы для чистого отображения на весь экран */
         body {
             margin: 0;
             padding: 0;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            box-sizing: border-box;
+            font-family: Arial, sans-serif;
         }
         
-        /* Контейнер-рамка, который выполняет функцию обрезки (cropping) */
-        .iframe-container {
+        /* Стили для Figma контейнера (PWA режим) */
+        .figma-container {
             width: 100%;
             height: 100%;
             overflow: hidden;
             position: relative;
+            display: none; /* Скрыт по умолчанию */
         }
 
-        /* Сам встроенный контент (iframe) */
-        .iframe-container iframe {
+        .figma-container iframe {
             width: 100%;
             height: calc(100% + 48px);
             border: none;
             position: absolute;
             top: -48px;
             left: 0;
-            overflow: auto; 
         }
         
-        /* Скрываем iframe по умолчанию */
-        .iframe-container {
-            display: none;
-        }
-        
-        /* Показываем редирект по умолчанию */
-        .redirect-message {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* Стили для инструкций (браузерный режим) */
+        .instructions-container {
+            width: 100%;
             height: 100vh;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            display: block;
+        }
+        
+        .instructions-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Сообщение о редиректе (показывается в браузере) -->
-    <div class="redirect-message" id="redirectMessage">
-        <div>
-            <h2>Загружаем установщик приложения...</h2>
-            <p>Подождите немного. Скоро можно будет установить приложение "ПЕРЕЦ" на ваше устройство.</p>
-        </div>
+    <!-- Контейнер с Figma проектом (для PWA режима) -->
+    <div class="figma-container" id="figmaContainer">
+        <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая"></iframe>
     </div>
     
-    <!-- Iframe с Figma проектом (показывается в PWA) -->
-    <div class="iframe-container" id="figmaContainer">
-        <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая с доставкой от 30 минут"></iframe>
+    <!-- Контейнер с инструкциями (для браузерного режима) -->
+    <div class="instructions-container" id="instructionsContainer">
+        <iframe class="instructions-iframe" src="https://perecinstructions.tilda.ws" title="Инструкция по добавлению"></iframe>
     </div>
 
-    <!-- Регистрация Service Worker и логика переключения -->
     <script>
-        // Функция проверки полноэкранного режима
-        function isRunningInPWA() {
-            return window.navigator.standalone || 
-                   window.matchMedia('(display-mode: standalone)').matches ||
-                   document.referrer.includes('android-app://');
+        // Проверяем, запущено ли в PWA режиме
+        function isPWA() {
+            // Проверка для iOS
+            if (window.navigator.standalone) return true;
+            
+            // Проверка для Android и других
+            if (window.matchMedia('(display-mode: standalone)').matches) return true;
+            
+            // Проверка по referrer (Android)
+            if (document.referrer.includes('android-app://')) return true;
+            
+            return false;
         }
         
-        // Основная логика
+        // Основная логика отображения
         function initApp() {
-            if (isRunningInPWA()) {
-                // Запущено в полноэкранном режиме - показываем Figma
+            if (isPWA()) {
+                // PWA режим - показываем Figma проект
                 document.getElementById('figmaContainer').style.display = 'block';
-                document.getElementById('redirectMessage').style.display = 'none';
-                console.log('Запущено в PWA режиме - показываем Figma');
+                document.getElementById('instructionsContainer').classList.add('hidden');
+                console.log('PWA режим - показываем Figma проект');
             } else {
-                // Запущено в браузере - редирект на Tilda
-                console.log('Запущено в браузере - редирект на Tilda');
-                window.location.href = 'https://perecinstructions.tilda.ws';
+                // Браузерный режим - показываем инструкции
+                document.getElementById('figmaContainer').classList.add('hidden');
+                document.getElementById('instructionsContainer').style.display = 'block';
+                console.log('Браузерный режим - показываем инструкции');
             }
         }
         
-        // Регистрация Service Worker для PWA
+        // Регистрация Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
-                        console.log('PWA готов к работе!');
-                        initApp(); // Запускаем основную логику после регистрации SW
+                        console.log('Service Worker зарегистрирован');
+                        initApp();
                     })
                     .catch(function(error) {
-                        console.log('Ошибка регистрации PWA:', error);
-                        initApp(); // Все равно запускаем логику даже при ошибке
+                        console.log('Ошибка Service Worker:', error);
+                        initApp();
                     });
             });
         } else {
-            // Если Service Worker не поддерживается, все равно запускаем логику
             initApp();
         }
+        
+        // Дополнительная проверка при изменении размера окна
+        window.addEventListener('resize', function() {
+            setTimeout(initApp, 100);
+        });
     </script>
 </body>
 </html>
-
