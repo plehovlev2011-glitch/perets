@@ -84,7 +84,7 @@
             background: white;
             color: #333;
             padding: 30px;
-            border-radius: 0; /* Убрано скругление */
+            border-radius: 0;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             max-width: 400px;
             width: 100%;
@@ -103,7 +103,7 @@
             color: white;
             width: 40px;
             height: 40px;
-            border-radius: 0; /* Убрано скругление */
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -123,7 +123,7 @@
             color: #666;
             border: 1px solid #ddd;
             padding: 10px 20px;
-            border-radius: 0; /* Убрано скругление */
+            border-radius: 0;
             font-size: 0.9em;
             cursor: pointer;
             margin-top: 15px;
@@ -184,14 +184,102 @@
     </div>
 
     <script>
+        // Система автоматического бэкапа LocalStorage
+        class LocalStorageBackup {
+            constructor() {
+                this.isPWA = false;
+                this.backupInterval = null;
+                this.init();
+            }
+            
+            async init() {
+                this.isPWA = this.checkPWA();
+                
+                if (this.isPWA && 'serviceWorker' in navigator) {
+                    await this.initServiceWorker();
+                    this.startBackupMonitoring();
+                    await this.checkRestore();
+                }
+            }
+            
+            checkPWA() {
+                return window.navigator.standalone || 
+                       window.matchMedia('(display-mode: standalone)').matches;
+            }
+            
+            async initServiceWorker() {
+                try {
+                    await navigator.serviceWorker.register('/sw.js');
+                    console.log('SW registered for backup');
+                } catch (error) {
+                    console.log('SW registration failed:', error);
+                }
+            }
+            
+            // Мониторинг изменений в LocalStorage
+            startBackupMonitoring() {
+                // Бэкап при изменении LocalStorage
+                const originalSetItem = localStorage.setItem;
+                const that = this;
+                
+                localStorage.setItem = function(key, value) {
+                    originalSetItem.apply(this, arguments);
+                    that.requestBackup();
+                };
+                
+                // Периодический бэкап
+                this.backupInterval = setInterval(() => {
+                    this.requestBackup();
+                }, 15000); // Каждые 15 секунд
+                
+                // Бэкап перед закрытием
+                window.addEventListener('beforeunload', () => {
+                    this.requestBackup();
+                });
+            }
+            
+            // Запрос бэкапа в Service Worker
+            async requestBackup() {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    try {
+                        const messageChannel = new MessageChannel();
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'BACKUP_LOCALSTORAGE',
+                            data: { timestamp: Date.now() }
+                        }, [messageChannel.port2]);
+                    } catch (error) {
+                        console.log('Backup request failed:', error);
+                    }
+                }
+            }
+            
+            // Проверка восстановления
+            async checkRestore() {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    try {
+                        const messageChannel = new MessageChannel();
+                        messageChannel.port1.onmessage = (event) => {
+                            if (event.data.hasBackup) {
+                                console.log('Backup available, data preserved');
+                            }
+                        };
+                        
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'RESTORE_LOCALSTORAGE'
+                        }, [messageChannel.port2]);
+                    } catch (error) {
+                        console.log('Restore check failed:', error);
+                    }
+                }
+            }
+        }
+        
         // Упрощенная проверка PWA режима
         function isPWA() {
-            // Для iOS
             if (window.navigator.standalone) {
                 return true;
             }
             
-            // Для других устройств
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 return true;
             }
@@ -204,12 +292,16 @@
             const isPwaMode = isPWA();
             const debugInfo = document.getElementById('debugInfo');
             
-            debugInfo.textContent = isPwaMode ? '..' : '.';
+            debugInfo.textContent = isPwaMode ? 'PWA MODE' : 'BROWSER MODE';
             
             if (isPwaMode) {
                 // PWA режим - показываем Figma проект
                 document.getElementById('figmaContainer').style.display = 'block';
                 document.getElementById('instructionsContainer').classList.add('hidden');
+                
+                // Инициализируем систему бэкапа
+                new LocalStorageBackup();
+                
             } else {
                 // Браузерный режим - показываем инструкции
                 document.getElementById('figmaContainer').classList.add('hidden');
@@ -217,7 +309,7 @@
             }
         }
         
-        // Простой Service Worker для теста
+        // Инициализация приложения
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
                 .then(() => {
