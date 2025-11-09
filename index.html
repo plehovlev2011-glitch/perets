@@ -8,6 +8,13 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ff0000">
     
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://ascii-donut-72130862.figma.site https://perets.netlify.app; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://ascii-donut-72130862.figma.site;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
     <!-- Настройки для Apple iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -141,36 +148,20 @@
             top: 10px;
             left: 10px;
             color: white;
-            font-size: 12px;
+            font-size: 16px;
             z-index: 1000;
-            background: rgba(0,0,0,0.7);
-            padding: 8px;
-            border-radius: 5px;
-            max-width: 300px;
-        }
-        
-        .storage-status {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info" id="debugInfo">Загрузка...</div>
-    <div class="storage-status" id="storageStatus">Хранилище: загрузка</div>
+    <div class="debug-info" id="debugInfo">.</div>
 
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
         <iframe src="https://ascii-donut-72130862.figma.site/" id="figmaFrame" title="ПЕРЕЦ - кафе-столовая"></iframe>
     </div>
     
-    <!-- Контейнер с инструкции (для браузерного режима) -->
+    <!-- Контейнер с инструкциями (для браузерного режима) -->
     <div class="instructions-container" id="instructionsContainer">
         <div class="logo">ПЕРЕЦ</div>
         <div class="slogan">кафе-столовая с доставкой от 30 минут</div>
@@ -200,233 +191,293 @@
     </div>
 
     <script>
-        // Улучшенная система управления хранилищем
-        class StorageManager {
+        // Конфигурация безопасности
+        const SECURITY_CONFIG = {
+            VALID_ORIGINS: [
+                'https://ascii-donut-72130862.figma.site',
+                'https://perets.netlify.app'
+            ],
+            BACKUP_KEY: 'perets_secure_data_v2',
+            VALID_DOMAINS: ['perets.netlify.app', 'localhost']
+        };
+
+        // Система безопасного хранения
+        class SecureStorage {
             constructor() {
-                this.storageKey = 'figma_app_data_v2';
-                this.backupData = {};
-                this.isPWA = false;
-                this.figmaReady = false;
-                this.backupInterval = null;
-                this.stats = {
-                    backups: 0,
-                    restores: 0,
-                    lastBackup: null
-                };
-                
+                this.backupCache = new Map();
                 this.init();
             }
-            
+
             init() {
-                this.loadBackupData();
-                this.setupEventListeners();
+                this.setupSecureMessaging();
                 this.startBackupService();
-                
-                console.log('Storage Manager инициализирован', {
-                    items: Object.keys(this.backupData).length,
-                    totalSize: this.getStorageSize()
-                });
-                
-                this.updateStorageStatus();
+                this.validateEnvironment();
             }
-            
-            setupEventListeners() {
-                // Обработчик сообщений от Figma
-                window.addEventListener('message', this.handleFigmaMessage.bind(this));
+
+            validateEnvironment() {
+                const isValidDomain = SECURITY_CONFIG.VALID_DOMAINS.some(domain => 
+                    location.hostname.includes(domain)
+                );
                 
+                if (!isValidDomain) {
+                    console.warn('[SECURITY] Неавторизованный домен:', location.hostname);
+                }
+
+                if (location.protocol !== 'https:' && !location.hostname.includes('localhost')) {
+                    console.warn('[SECURITY] Небезопасное соединение');
+                }
+            }
+
+            setupSecureMessaging() {
+                window.addEventListener('message', (event) => {
+                    // Строгая проверка origin
+                    if (!SECURITY_CONFIG.VALID_ORIGINS.includes(event.origin)) {
+                        return;
+                    }
+
+                    try {
+                        this.handleSecureMessage(event);
+                    } catch (error) {
+                        console.error('[SECURITY] Message handling error:', error);
+                    }
+                });
+            }
+
+            handleSecureMessage(event) {
+                const { type, data, timestamp } = event.data;
+
+                // Проверка свежести сообщения (не старше 10 секунд)
+                if (Date.now() - timestamp > 10000) {
+                    return;
+                }
+
+                switch(type) {
+                    case 'STORAGE_BACKUP':
+                        this.saveSecureBackup(data, event.source, event.origin);
+                        break;
+                    case 'STORAGE_RESTORE_REQUEST':
+                        this.restoreSecureData(event.source, event.origin);
+                        break;
+                    case 'STORAGE_PING':
+                        this.sendPong(event.source, event.origin);
+                        break;
+                }
+            }
+
+            saveSecureBackup(data, target, origin) {
+                try {
+                    const backup = {
+                        data: data,
+                        timestamp: Date.now(),
+                        version: '2.0',
+                        checksum: this.generateChecksum(data)
+                    };
+
+                    // Сохраняем в несколько источников
+                    this.saveToLocalStorage(backup);
+                    this.saveToIndexedDB(backup);
+                    this.backupCache.set('latest', backup);
+
+                    // Подтверждаем получение
+                    target.postMessage({
+                        type: 'STORAGE_BACKUP_CONFIRMED',
+                        timestamp: Date.now()
+                    }, origin);
+
+                } catch (error) {
+                    console.error('[SECURITY] Backup error:', error);
+                }
+            }
+
+            saveToLocalStorage(backup) {
+                try {
+                    localStorage.setItem(SECURITY_CONFIG.BACKUP_KEY, JSON.stringify(backup));
+                    
+                    // Очистка старых бэкапов
+                    this.cleanupOldBackups();
+                } catch (error) {
+                    console.warn('[SECURITY] LocalStorage save failed:', error);
+                }
+            }
+
+            async saveToIndexedDB(backup) {
+                try {
+                    const db = await this.openDatabase();
+                    const transaction = db.transaction(['secureStorage'], 'readwrite');
+                    const store = transaction.objectStore('secureStorage');
+                    
+                    await store.put({
+                        id: 'primary_backup',
+                        ...backup,
+                        dbTimestamp: Date.now()
+                    });
+                } catch (error) {
+                    console.warn('[SECURITY] IndexedDB save failed:', error);
+                }
+            }
+
+            openDatabase() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('PeretsSecureDB', 2);
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('secureStorage')) {
+                            const store = db.createObjectStore('secureStorage', { keyPath: 'id' });
+                            store.createIndex('timestamp', 'timestamp');
+                        }
+                    };
+                });
+            }
+
+            async restoreSecureData(target, origin) {
+                try {
+                    let backup = null;
+
+                    // Приоритет: Кеш -> LocalStorage -> IndexedDB
+                    if (this.backupCache.has('latest')) {
+                        backup = this.backupCache.get('latest');
+                    } else {
+                        backup = this.getFromLocalStorage();
+                        if (!backup) {
+                            backup = await this.getFromIndexedDB();
+                        }
+                    }
+
+                    if (backup && this.validateBackup(backup)) {
+                        target.postMessage({
+                            type: 'STORAGE_RESTORE_RESPONSE',
+                            data: backup.data,
+                            timestamp: Date.now()
+                        }, origin);
+                    } else {
+                        target.postMessage({
+                            type: 'STORAGE_RESTORE_EMPTY',
+                            timestamp: Date.now()
+                        }, origin);
+                    }
+
+                } catch (error) {
+                    console.error('[SECURITY] Restore error:', error);
+                }
+            }
+
+            getFromLocalStorage() {
+                try {
+                    const stored = localStorage.getItem(SECURITY_CONFIG.BACKUP_KEY);
+                    return stored ? JSON.parse(stored) : null;
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            async getFromIndexedDB() {
+                try {
+                    const db = await this.openDatabase();
+                    const transaction = db.transaction(['secureStorage'], 'readonly');
+                    const store = transaction.objectStore('secureStorage');
+                    
+                    return new Promise((resolve) => {
+                        const request = store.get('primary_backup');
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => resolve(null);
+                    });
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            validateBackup(backup) {
+                return backup && 
+                       backup.checksum === this.generateChecksum(backup.data) &&
+                       Date.now() - backup.timestamp < 86400000; // 24 часа максимум
+            }
+
+            generateChecksum(data) {
+                const str = JSON.stringify(data);
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return hash.toString();
+            }
+
+            sendPong(target, origin) {
+                target.postMessage({
+                    type: 'STORAGE_PONG',
+                    timestamp: Date.now(),
+                    status: 'secure'
+                }, origin);
+            }
+
+            startBackupService() {
+                // Автоматический запрос бэкапа каждые 20 секунд
+                setInterval(() => {
+                    this.requestBackup();
+                }, 20000);
+
                 // Бэкап при закрытии
                 window.addEventListener('beforeunload', () => {
                     this.requestBackup();
                 });
-                
-                // Периодическая проверка связи
-                setInterval(() => {
-                    this.pingFigma();
-                }, 10000);
             }
-            
-            handleFigmaMessage(event) {
-                // Принимаем сообщения от любого origin для гибкости
-                const { type, data } = event.data;
-                
-                switch(type) {
-                    case 'BACKUP_DATA':
-                        // Сохраняем данные от Figma
-                        this.saveBackupData(data);
-                        this.stats.backups++;
-                        this.updateStorageStatus(`Данные сохранены (${Object.keys(data).length} записей)`);
-                        break;
-                        
-                    case 'STORAGE_READY':
-                        // Figma готова к работе
-                        this.figmaReady = true;
-                        this.updateStorageStatus('Figma подключена');
-                        this.restoreDataToFigma();
-                        break;
-                        
-                    case 'REQUEST_RESTORE':
-                        // Figma запрашивает восстановление
-                        this.restoreDataToFigma();
-                        break;
-                        
-                    case 'PONG':
-                        // Подтверждение связи
-                        this.figmaReady = true;
-                        break;
-                }
-            }
-            
-            saveBackupData(data) {
-                try {
-                    this.backupData = { ...this.backupData, ...data };
-                    
-                    const storageData = {
-                        data: this.backupData,
-                        timestamp: Date.now(),
-                        version: '2.0',
-                        stats: this.stats
-                    };
-                    
-                    localStorage.setItem(this.storageKey, JSON.stringify(storageData));
-                    this.stats.lastBackup = new Date().toLocaleTimeString();
-                    
-                    console.log('Backup saved:', {
-                        items: Object.keys(data).length,
-                        totalItems: Object.keys(this.backupData).length,
-                        size: this.getStorageSize()
-                    });
-                    
-                } catch (error) {
-                    console.error('Backup save error:', error);
-                    this.updateStorageStatus('Ошибка сохранения');
-                }
-            }
-            
-            loadBackupData() {
-                try {
-                    const stored = localStorage.getItem(this.storageKey);
-                    if (stored) {
-                        const parsed = JSON.parse(stored);
-                        this.backupData = parsed.data || {};
-                        this.stats = { ...this.stats, ...parsed.stats };
-                        console.log('Backup loaded:', Object.keys(this.backupData).length, 'items');
-                    }
-                } catch (error) {
-                    console.error('Backup load error:', error);
-                    this.backupData = {};
-                }
-            }
-            
-            restoreDataToFigma() {
-                if (Object.keys(this.backupData).length === 0) {
-                    this.updateStorageStatus('Нет данных для восстановления');
-                    return;
-                }
-                
-                const frame = document.getElementById('figmaFrame');
-                if (frame && frame.contentWindow) {
-                    try {
-                        frame.contentWindow.postMessage({
-                            type: 'RESTORE_BACKUP',
-                            data: this.backupData
-                        }, '*');
-                        
-                        this.stats.restores++;
-                        this.updateStorageStatus(`Данные восстановлены (${Object.keys(this.backupData).length} записей)`);
-                        
-                        console.log('Data restored to Figma:', Object.keys(this.backupData).length, 'items');
-                    } catch (error) {
-                        console.error('Restore error:', error);
-                    }
-                }
-            }
-            
+
             requestBackup() {
                 const frame = document.getElementById('figmaFrame');
                 if (frame && frame.contentWindow) {
                     try {
                         frame.contentWindow.postMessage({
-                            type: 'REQUEST_BACKUP'
+                            type: 'STORAGE_BACKUP_REQUEST',
+                            timestamp: Date.now()
                         }, '*');
                     } catch (error) {
-                        console.log('Backup request error:', error);
+                        // Игнорируем cross-origin ошибки
                     }
                 }
             }
-            
-            pingFigma() {
-                const frame = document.getElementById('figmaFrame');
-                if (frame && frame.contentWindow && this.isPWA) {
-                    try {
-                        frame.contentWindow.postMessage({
-                            type: 'PING'
-                        }, '*');
-                    } catch (error) {
-                        // Игнорируем ошибки ping
-                    }
-                }
-            }
-            
-            startBackupService() {
-                // Автоматический бэкап каждые 10 секунд в PWA режиме
-                this.backupInterval = setInterval(() => {
-                    if (this.isPWA && this.figmaReady) {
-                        this.requestBackup();
-                    }
-                }, 10000);
-            }
-            
-            getStorageSize() {
-                const data = JSON.stringify(this.backupData);
-                return new Blob([data]).size;
-            }
-            
-            updateStorageStatus(message = '') {
-                const statusElement = document.getElementById('storageStatus');
-                if (statusElement) {
-                    const sizeKB = (this.getStorageSize() / 1024).toFixed(2);
-                    const itemsCount = Object.keys(this.backupData).length;
-                    
-                    let statusText = `Хранилище: ${itemsCount} записей, ${sizeKB} KB`;
-                    if (this.stats.lastBackup) {
-                        statusText += ` | Последний бэкап: ${this.stats.lastBackup}`;
-                    }
-                    
-                    statusElement.textContent = statusText;
-                }
-                
-                if (message) {
-                    const debugElement = document.getElementById('debugInfo');
-                    if (debugElement) {
-                        debugElement.textContent = message;
-                        // Автоочистка сообщения через 3 секунды
-                        setTimeout(() => {
-                            if (debugElement.textContent === message) {
-                                debugElement.textContent = this.isPWA ? 'PWA MODE' : 'BROWSER MODE';
+
+            cleanupOldBackups() {
+                // Очистка устаревших записей
+                const now = Date.now();
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('perets_backup_')) {
+                        try {
+                            const item = JSON.parse(localStorage.getItem(key));
+                            if (now - item.timestamp > 86400000) { // 24 часа
+                                localStorage.removeItem(key);
                             }
-                        }, 3000);
+                        } catch (error) {
+                            localStorage.removeItem(key);
+                        }
                     }
                 }
-            }
-            
-            getStorageStats() {
-                return {
-                    ...this.stats,
-                    totalItems: Object.keys(this.backupData).length,
-                    totalSize: this.getStorageSize(),
-                    isPWA: this.isPWA,
-                    figmaReady: this.figmaReady
-                };
             }
         }
 
-        // Инициализация приложения
-        function initApp() {
-            const isPwaMode = checkPWA();
-            const storageManager = new StorageManager();
-            storageManager.isPWA = isPwaMode;
+        // Упрощенная проверка PWA режима
+        function isPWA() {
+            if (window.navigator.standalone) {
+                return true;
+            }
             
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // Основная логика отображения
+        function initApp() {
+            const isPwaMode = isPWA();
             const debugInfo = document.getElementById('debugInfo');
+            
             debugInfo.textContent = isPwaMode ? 'PWA MODE' : 'BROWSER MODE';
             
             if (isPwaMode) {
@@ -434,12 +485,19 @@
                 document.getElementById('figmaContainer').style.display = 'block';
                 document.getElementById('instructionsContainer').classList.add('hidden');
                 
-                // Когда Figma загрузится
+                // Инициализируем безопасное хранилище
+                window.secureStorage = new SecureStorage();
+                
+                // Восстанавливаем данные когда Figma загрузится
                 const frame = document.getElementById('figmaFrame');
                 frame.onload = function() {
                     setTimeout(() => {
-                        storageManager.updateStorageStatus('Figma загружается...');
-                    }, 1000);
+                        // Запрос на восстановление данных
+                        frame.contentWindow.postMessage({
+                            type: 'STORAGE_RESTORE_REQUEST',
+                            timestamp: Date.now()
+                        }, '*');
+                    }, 2000);
                 };
                 
             } else {
@@ -447,24 +505,23 @@
                 document.getElementById('figmaContainer').classList.add('hidden');
                 document.getElementById('instructionsContainer').style.display = 'flex';
             }
-            
-            // Экспорт для дебага
-            window.storageManager = storageManager;
         }
         
-        function checkPWA() {
-            return window.navigator.standalone || 
-                   window.matchMedia('(display-mode: standalone)').matches;
-        }
-        
-        // Запуск приложения
-        document.addEventListener('DOMContentLoaded', initApp);
-        
-        // Фолбэк на случай если DOM уже загружен
-        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        // Инициализация приложения
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => {
+                    initApp();
+                })
+                .catch(() => {
+                    initApp();
+                });
+        } else {
             initApp();
         }
+        
+        // На всякий случай повторная инициализация через секунду
+        setTimeout(initApp, 1000);
     </script>
 </body>
 </html>
-
