@@ -143,18 +143,21 @@
             color: white;
             font-size: 16px;
             z-index: 1000;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info" id="debugInfo">.</div>
+    <div class="debug-info" id="debugInfo">Загрузка...</div>
 
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
-        <iframe src="https://ascii-donut-72130862.figma.site/" title="ПЕРЕЦ - кафе-столовая"></iframe>
+        <iframe src="https://ascii-donut-72130862.figma.site/" id="figmaFrame" title="ПЕРЕЦ - кафе-столовая"></iframe>
     </div>
     
-    <!-- Контейнер с инструкциями (для браузерного режима) -->
+    <!-- Контейнер с инструкции (для браузерного режима) -->
     <div class="instructions-container" id="instructionsContainer">
         <div class="logo">ПЕРЕЦ</div>
         <div class="slogan">кафе-столовая с доставкой от 30 минут</div>
@@ -184,96 +187,118 @@
     </div>
 
     <script>
-        // Система автоматического бэкапа LocalStorage
-        class LocalStorageBackup {
-            constructor() {
-                this.isPWA = false;
-                this.backupInterval = null;
-                this.init();
-            }
+        // Глобальное хранилище для данных Figma
+        const figmaStorage = {
+            data: {},
+            initialized: false,
             
-            async init() {
-                this.isPWA = this.checkPWA();
-                
-                if (this.isPWA && 'serviceWorker' in navigator) {
-                    await this.initServiceWorker();
-                    this.startBackupMonitoring();
-                    await this.checkRestore();
-                }
-            }
-            
-            checkPWA() {
-                return window.navigator.standalone || 
-                       window.matchMedia('(display-mode: standalone)').matches;
-            }
-            
-            async initServiceWorker() {
+            init() {
+                // Восстанавливаем данные из localStorage при запуске
                 try {
-                    await navigator.serviceWorker.register('/sw.js');
-                    console.log('SW registered for backup');
-                } catch (error) {
-                    console.log('SW registration failed:', error);
-                }
-            }
-            
-            // Мониторинг изменений в LocalStorage
-            startBackupMonitoring() {
-                // Бэкап при изменении LocalStorage
-                const originalSetItem = localStorage.setItem;
-                const that = this;
-                
-                localStorage.setItem = function(key, value) {
-                    originalSetItem.apply(this, arguments);
-                    that.requestBackup();
-                };
-                
-                // Периодический бэкап
-                this.backupInterval = setInterval(() => {
-                    this.requestBackup();
-                }, 15000); // Каждые 15 секунд
-                
-                // Бэкап перед закрытием
-                window.addEventListener('beforeunload', () => {
-                    this.requestBackup();
-                });
-            }
-            
-            // Запрос бэкапа в Service Worker
-            async requestBackup() {
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    try {
-                        const messageChannel = new MessageChannel();
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'BACKUP_LOCALSTORAGE',
-                            data: { timestamp: Date.now() }
-                        }, [messageChannel.port2]);
-                    } catch (error) {
-                        console.log('Backup request failed:', error);
+                    const saved = localStorage.getItem('figma_storage_backup');
+                    if (saved) {
+                        this.data = JSON.parse(saved);
+                        console.log('Восстановлены данные:', Object.keys(this.data));
                     }
+                } catch (e) {
+                    console.error('Ошибка восстановления:', e);
                 }
-            }
+                this.initialized = true;
+            },
             
-            // Проверка восстановления
-            async checkRestore() {
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    try {
-                        const messageChannel = new MessageChannel();
-                        messageChannel.port1.onmessage = (event) => {
-                            if (event.data.hasBackup) {
-                                console.log('Backup available, data preserved');
-                            }
-                        };
-                        
-                        navigator.serviceWorker.controller.postMessage({
-                            type: 'RESTORE_LOCALSTORAGE'
-                        }, [messageChannel.port2]);
-                    } catch (error) {
-                        console.log('Restore check failed:', error);
-                    }
+            setItem(key, value) {
+                this.data[key] = value;
+                this.saveToBackup();
+            },
+            
+            getItem(key) {
+                return this.data[key] || null;
+            },
+            
+            removeItem(key) {
+                delete this.data[key];
+                this.saveToBackup();
+            },
+            
+            saveToBackup() {
+                try {
+                    localStorage.setItem('figma_storage_backup', JSON.stringify(this.data));
+                } catch (e) {
+                    console.error('Ошибка сохранения бэкапа:', e);
                 }
+            },
+            
+            // Получить все данные для инициализации Figma
+            getAllData() {
+                return this.data;
             }
-        }
-        
+        };
+
+        // Инициализируем хранилище
+        figmaStorage.init();
+
+        // Обработчик сообщений от Figma iframe
+        window.addEventListener('message', function(event) {
+            // Проверяем origin для безопасности
+            if (event.origin !== 'https://ascii-donut-72130862.figma.site') return;
+            
+            const { type, key, value, messageId } = event.data;
+            const debugInfo = document.getElementById('debugInfo');
+            
+            debugInfo.innerHTML = `Figma: ${type} ${key}`;
+            
+            switch(type) {
+                case 'GET_STORAGE':
+                    // Figma запрашивает данные
+                    const data = figmaStorage.getAllData();
+                    event.source.postMessage({
+                        type: 'STORAGE_DATA',
+                        data: data,
+                        messageId: messageId
+                    }, event.origin);
+                    break;
+                    
+                case 'SET_ITEM':
+                    // Figma сохраняет данные
+                    figmaStorage.setItem(key, value);
+                    event.source.postMessage({
+                        type: 'SET_SUCCESS',
+                        key: key,
+                        messageId: messageId
+                    }, event.origin);
+                    break;
+                    
+                case 'GET_ITEM':
+                    // Figma запрашивает конкретный ключ
+                    const itemValue = figmaStorage.getItem(key);
+                    event.source.postMessage({
+                        type: 'ITEM_VALUE',
+                        key: key,
+                        value: itemValue,
+                        messageId: messageId
+                    }, event.origin);
+                    break;
+                    
+                case 'REMOVE_ITEM':
+                    // Figma удаляет данные
+                    figmaStorage.removeItem(key);
+                    event.source.postMessage({
+                        type: 'REMOVE_SUCCESS',
+                        key: key,
+                        messageId: messageId
+                    }, event.origin);
+                    break;
+                    
+                case 'PING':
+                    // Проверка связи
+                    event.source.postMessage({
+                        type: 'PONG',
+                        messageId: messageId
+                    }, event.origin);
+                    break;
+            }
+        });
+
         // Упрощенная проверка PWA режима
         function isPWA() {
             if (window.navigator.standalone) {
@@ -299,8 +324,13 @@
                 document.getElementById('figmaContainer').style.display = 'block';
                 document.getElementById('instructionsContainer').classList.add('hidden');
                 
-                // Инициализируем систему бэкапа
-                new LocalStorageBackup();
+                // Ждем загрузки Figma и отправляем данные
+                const frame = document.getElementById('figmaFrame');
+                frame.onload = function() {
+                    setTimeout(() => {
+                        debugInfo.textContent = 'Figma загружена, данные готовы';
+                    }, 2000);
+                };
                 
             } else {
                 // Браузерный режим - показываем инструкции
@@ -310,20 +340,19 @@
         }
         
         // Инициализация приложения
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(() => {
-                    initApp();
-                })
-                .catch(() => {
-                    initApp();
-                });
-        } else {
-            initApp();
-        }
+        initApp();
         
-        // На всякий случай повторная инициализация через секунду
-        setTimeout(initApp, 1000);
+        // Бэкап каждые 10 секунд
+        setInterval(() => {
+            if (figmaStorage.initialized) {
+                figmaStorage.saveToBackup();
+            }
+        }, 10000);
+        
+        // Бэкап при закрытии
+        window.addEventListener('beforeunload', () => {
+            figmaStorage.saveToBackup();
+        });
     </script>
 </body>
 </html>
