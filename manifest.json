@@ -16,7 +16,7 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "background_color": "#ff0000",
   "display": "standalone",
   "scope": "/",
@@ -25,6 +25,8 @@
   "categories": ["food", "restaurant"],
   "lang": "ru",
   "dir": "ltr",
+  "prefer_related_applications": false,
+  "related_applications": [],
   "screenshots": [
     {
       "src": "/screenshots/screen-1.png",
