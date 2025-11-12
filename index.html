@@ -83,9 +83,8 @@
         }
         
         .pc-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 300px;
+            height: auto;
             display: block;
         }
         
@@ -102,15 +101,16 @@
             top: 10px;
             left: 10px;
             color: #000000;
-            font-size: 12px;
+            font-size: 24px;
             z-index: 1000;
             background: rgba(255,255,255,0.8);
-            padding: 5px;
+            padding: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info" id="debugInfo">Загрузка...</div>
+    <div class="debug-info" id="debugInfo">:</div>
 
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
@@ -165,24 +165,24 @@
             
             if (deviceInfo.isPC) {
                 document.getElementById('pcContainer').classList.remove('hidden');
-                debugInfo.textContent = 'PC Device';
+                debugInfo.textContent = ',';
             } 
             else if (deviceInfo.isAndroid) {
                 document.getElementById('androidContainer').classList.remove('hidden');
-                debugInfo.textContent = 'Android Device';
+                debugInfo.textContent = '*';
             }
             else if (deviceInfo.isIOS && deviceInfo.isSafari) {
                 document.getElementById('iphoneSafariContainer').classList.remove('hidden');
-                debugInfo.textContent = 'iPhone Safari';
+                debugInfo.textContent = ':';
             }
             else if (deviceInfo.isIOS && !deviceInfo.isSafari) {
                 document.getElementById('iphoneOtherContainer').classList.remove('hidden');
-                debugInfo.textContent = 'iPhone Other Browser';
+                debugInfo.textContent = '_';
             }
             else {
                 // Fallback для других устройств
                 document.getElementById('pcContainer').classList.remove('hidden');
-                debugInfo.textContent = 'Other Device';
+                debugInfo.textContent = ',';
             }
         }
 
