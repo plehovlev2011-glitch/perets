@@ -6,10 +6,15 @@
     
     <!-- PWA настройки -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ff0000">
+    <meta name="theme-color" content="#ffffff">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://ascii-donut-72130862.figma.site https://perets.netlify.app; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://ascii-donut-72130862.figma.site;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://ascii-donut-72130862.figma.site https://perets.netlify.app; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' https://ascii-donut-72130862.figma.site;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
@@ -21,16 +26,13 @@
     <meta name="apple-mobile-web-app-title" content="ПЕРЕЦ">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     
-    <title>ПЕРЕЦ - кафе-столовая с доставкой от 30 минут</title>
+    <title>ПЕРЕЦ</title>
     
     <style>
-        /* Подключаем шрифт */
-        @font-face {
-            font-family: 'Seenonim';
-            src: url('/fonts/seenonim-v1.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
@@ -39,9 +41,9 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            font-family: 'Seenonim', Arial, sans-serif;
-            background: linear-gradient(135deg, #ff0000, #cc0000);
-            color: white;
+            font-family: 'Ubuntu Mono', monospace;
+            background: #ffffff;
+            color: #000000;
         }
         
         /* Стили для Figma контейнера (PWA режим) */
@@ -62,8 +64,8 @@
             left: 0;
         }
         
-        /* Стили для инструкций (браузерный режим) */
-        .instructions-container {
+        /* Контейнеры для разных устройств */
+        .device-container {
             width: 100%;
             height: 100vh;
             display: flex;
@@ -71,72 +73,24 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
         }
         
-        .logo {
-            font-size: 3em;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .slogan {
-            font-size: 1.2em;
-            margin-bottom: 40px;
-            opacity: 0.9;
-        }
-        
-        .instruction-card {
-            background: white;
-            color: #333;
-            padding: 30px;
-            border-radius: 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-width: 400px;
+        .fullscreen-image {
             width: 100%;
-            font-family: 'Seenonim', Arial, sans-serif;
+            height: 100vh;
+            object-fit: contain;
+            display: block;
         }
         
-        .instruction-step {
-            display: flex;
-            align-items: center;
-            margin: 25px 0;
-            text-align: left;
+        .pc-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
         }
         
-        .step-number {
-            background: #ff0000;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 15px;
-            flex-shrink: 0;
-            font-family: 'Seenonim', Arial, sans-serif;
-        }
-        
-        .step-text {
-            flex: 1;
-            font-size: 0.95em;
-        }
-        
-        .android-button {
-            background: transparent;
-            color: #666;
-            border: 1px solid #ddd;
-            padding: 10px 20px;
-            border-radius: 0;
-            font-size: 0.9em;
+        .clickable {
             cursor: pointer;
-            margin-top: 15px;
-            text-decoration: none;
-            display: inline-block;
-            font-family: 'Seenonim', Arial, sans-serif;
         }
         
         .hidden {
@@ -147,50 +101,123 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            color: white;
-            font-size: 16px;
+            color: #000000;
+            font-size: 12px;
             z-index: 1000;
+            background: rgba(255,255,255,0.8);
+            padding: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="debug-info" id="debugInfo">.</div>
+    <div class="debug-info" id="debugInfo">Загрузка...</div>
 
     <!-- Контейнер с Figma проектом (для PWA режима) -->
     <div class="figma-container" id="figmaContainer">
-        <iframe src="https://ascii-donut-72130862.figma.site/" id="figmaFrame" title="ПЕРЕЦ - кафе-столовая"></iframe>
+        <iframe src="https://ascii-donut-72130862.figma.site/" id="figmaFrame" title="ПЕРЕЦ"></iframe>
     </div>
     
-    <!-- Контейнер с инструкциями (для браузерного режима) -->
-    <div class="instructions-container" id="instructionsContainer">
-        <div class="logo">ПЕРЕЦ</div>
-        <div class="slogan">кафе-столовая с доставкой от 30 минут</div>
-        
-        <div class="instruction-card">
-            <h2 style="font-size: 1.3em; margin-bottom: 25px;">остался всего один шаг, чтобы установить приложение ПЕРЕЦ на ваш айфон</h2>
-            
-            <div class="instruction-step">
-                <div class="step-number">1</div>
-                <div class="step-text">нажмите кнопку "поделиться" в браузере</div>
-            </div>
-            
-            <div class="instruction-step">
-                <div class="step-number">2</div>
-                <div class="step-text">выберите "на экран домой"</div>
-            </div>
-            
-            <div class="instruction-step">
-                <div class="step-number">3</div>
-                <div class="step-text">нажмите "добавить". приложение установится и появится на главном экране</div>
-            </div>
-            
-            <a href="https://www.rustore.ru/catalog/app/co.median.android.dyrbaxe" class="android-button">
-                у меня андроид
-            </a>
+    <!-- Контейнеры для разных устройств -->
+    <div id="pcContainer" class="device-container hidden">
+        <img src="/images/3.png" class="pc-image" alt="ПЕРЕЦ">
+    </div>
+    
+    <div id="androidContainer" class="device-container hidden">
+        <img src="/images/4.png" class="fullscreen-image clickable" id="androidImage" alt="Установить ПЕРЕЦ">
+    </div>
+    
+    <div id="iphoneSafariContainer" class="device-container hidden">
+        <img src="/images/1.png" class="fullscreen-image clickable" id="image1" alt="Установить приложение">
+        <div id="image2" class="hidden">
+            <img src="/images/2.png" class="fullscreen-image" alt="Инструкция">
         </div>
+    </div>
+    
+    <div id="iphoneOtherContainer" class="device-container hidden">
+        <img src="/images/se.png" class="fullscreen-image clickable" id="safariImage" alt="Открыть в Safari">
     </div>
 
     <script>
+        // Определение устройства и браузера
+        function detectDevice() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isIOS = /iphone|ipad|ipod/.test(userAgent);
+            const isAndroid = /android/.test(userAgent);
+            const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+            const isMobile = /mobile/.test(userAgent);
+            const isTablet = /tablet/.test(userAgent);
+            const isPC = !isMobile && !isTablet;
+            
+            return {
+                isIOS,
+                isAndroid, 
+                isSafari,
+                isMobile,
+                isTablet,
+                isPC,
+                userAgent
+            };
+        }
+
+        // Показ соответствующего контейнера
+        function showDeviceContainer(deviceInfo) {
+            const debugInfo = document.getElementById('debugInfo');
+            
+            if (deviceInfo.isPC) {
+                document.getElementById('pcContainer').classList.remove('hidden');
+                debugInfo.textContent = 'PC Device';
+            } 
+            else if (deviceInfo.isAndroid) {
+                document.getElementById('androidContainer').classList.remove('hidden');
+                debugInfo.textContent = 'Android Device';
+            }
+            else if (deviceInfo.isIOS && deviceInfo.isSafari) {
+                document.getElementById('iphoneSafariContainer').classList.remove('hidden');
+                debugInfo.textContent = 'iPhone Safari';
+            }
+            else if (deviceInfo.isIOS && !deviceInfo.isSafari) {
+                document.getElementById('iphoneOtherContainer').classList.remove('hidden');
+                debugInfo.textContent = 'iPhone Other Browser';
+            }
+            else {
+                // Fallback для других устройств
+                document.getElementById('pcContainer').classList.remove('hidden');
+                debugInfo.textContent = 'Other Device';
+            }
+        }
+
+        // Обработчики кликов
+        function setupEventListeners(deviceInfo) {
+            // Android - открыть Rustore
+            if (deviceInfo.isAndroid) {
+                document.getElementById('androidImage').addEventListener('click', function() {
+                    window.open('https://www.rustore.ru/catalog/app/co.median.android.dyrbaxe', '_blank');
+                });
+            }
+            
+            // iPhone Safari - переключение между картинками
+            if (deviceInfo.isIOS && deviceInfo.isSafari) {
+                document.getElementById('image1').addEventListener('click', function() {
+                    document.getElementById('image1').classList.add('hidden');
+                    document.getElementById('image2').classList.remove('hidden');
+                });
+            }
+            
+            // iPhone другие браузеры - открыть Safari
+            if (deviceInfo.isIOS && !deviceInfo.isSafari) {
+                document.getElementById('safariImage').addEventListener('click', function() {
+                    // Пытаемся открыть в Safari
+                    const url = window.location.href;
+                    window.location.href = 'x-web-search://?=' + encodeURIComponent(url);
+                    
+                    // Fallback - открыть текущую страницу
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 1000);
+                });
+            }
+        }
+
         // Конфигурация безопасности
         const SECURITY_CONFIG = {
             VALID_ORIGINS: [
@@ -211,26 +238,10 @@
             init() {
                 this.setupSecureMessaging();
                 this.startBackupService();
-                this.validateEnvironment();
-            }
-
-            validateEnvironment() {
-                const isValidDomain = SECURITY_CONFIG.VALID_DOMAINS.some(domain => 
-                    location.hostname.includes(domain)
-                );
-                
-                if (!isValidDomain) {
-                    console.warn('[SECURITY] Неавторизованный домен:', location.hostname);
-                }
-
-                if (location.protocol !== 'https:' && !location.hostname.includes('localhost')) {
-                    console.warn('[SECURITY] Небезопасное соединение');
-                }
             }
 
             setupSecureMessaging() {
                 window.addEventListener('message', (event) => {
-                    // Строгая проверка origin
                     if (!SECURITY_CONFIG.VALID_ORIGINS.includes(event.origin)) {
                         return;
                     }
@@ -246,7 +257,6 @@
             handleSecureMessage(event) {
                 const { type, data, timestamp } = event.data;
 
-                // Проверка свежести сообщения (не старше 10 секунд)
                 if (Date.now() - timestamp > 10000) {
                     return;
                 }
@@ -257,9 +267,6 @@
                         break;
                     case 'STORAGE_RESTORE_REQUEST':
                         this.restoreSecureData(event.source, event.origin);
-                        break;
-                    case 'STORAGE_PING':
-                        this.sendPong(event.source, event.origin);
                         break;
                 }
             }
@@ -273,12 +280,10 @@
                         checksum: this.generateChecksum(data)
                     };
 
-                    // Сохраняем в несколько источников
                     this.saveToLocalStorage(backup);
                     this.saveToIndexedDB(backup);
                     this.backupCache.set('latest', backup);
 
-                    // Подтверждаем получение
                     target.postMessage({
                         type: 'STORAGE_BACKUP_CONFIRMED',
                         timestamp: Date.now()
@@ -292,8 +297,6 @@
             saveToLocalStorage(backup) {
                 try {
                     localStorage.setItem(SECURITY_CONFIG.BACKUP_KEY, JSON.stringify(backup));
-                    
-                    // Очистка старых бэкапов
                     this.cleanupOldBackups();
                 } catch (error) {
                     console.warn('[SECURITY] LocalStorage save failed:', error);
@@ -337,7 +340,6 @@
                 try {
                     let backup = null;
 
-                    // Приоритет: Кеш -> LocalStorage -> IndexedDB
                     if (this.backupCache.has('latest')) {
                         backup = this.backupCache.get('latest');
                     } else {
@@ -393,7 +395,7 @@
             validateBackup(backup) {
                 return backup && 
                        backup.checksum === this.generateChecksum(backup.data) &&
-                       Date.now() - backup.timestamp < 86400000; // 24 часа максимум
+                       Date.now() - backup.timestamp < 86400000;
             }
 
             generateChecksum(data) {
@@ -407,21 +409,11 @@
                 return hash.toString();
             }
 
-            sendPong(target, origin) {
-                target.postMessage({
-                    type: 'STORAGE_PONG',
-                    timestamp: Date.now(),
-                    status: 'secure'
-                }, origin);
-            }
-
             startBackupService() {
-                // Автоматический запрос бэкапа каждые 20 секунд
                 setInterval(() => {
                     this.requestBackup();
                 }, 20000);
 
-                // Бэкап при закрытии
                 window.addEventListener('beforeunload', () => {
                     this.requestBackup();
                 });
@@ -442,14 +434,13 @@
             }
 
             cleanupOldBackups() {
-                // Очистка устаревших записей
                 const now = Date.now();
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
                     if (key && key.startsWith('perets_backup_')) {
                         try {
                             const item = JSON.parse(localStorage.getItem(key));
-                            if (now - item.timestamp > 86400000) { // 24 часа
+                            if (now - item.timestamp > 86400000) {
                                 localStorage.removeItem(key);
                             }
                         } catch (error) {
@@ -462,37 +453,26 @@
 
         // Упрощенная проверка PWA режима
         function isPWA() {
-            if (window.navigator.standalone) {
-                return true;
-            }
-            
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                return true;
-            }
-            
-            return false;
+            return window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
         }
         
         // Основная логика отображения
         function initApp() {
             const isPwaMode = isPWA();
-            const debugInfo = document.getElementById('debugInfo');
-            
-            debugInfo.textContent = isPwaMode ? 'PWA MODE' : 'BROWSER MODE';
+            const deviceInfo = detectDevice();
             
             if (isPwaMode) {
                 // PWA режим - показываем Figma проект
                 document.getElementById('figmaContainer').style.display = 'block';
-                document.getElementById('instructionsContainer').classList.add('hidden');
+                document.querySelectorAll('.device-container').forEach(container => {
+                    container.classList.add('hidden');
+                });
                 
-                // Инициализируем безопасное хранилище
                 window.secureStorage = new SecureStorage();
                 
-                // Восстанавливаем данные когда Figma загрузится
                 const frame = document.getElementById('figmaFrame');
                 frame.onload = function() {
                     setTimeout(() => {
-                        // Запрос на восстановление данных
                         frame.contentWindow.postMessage({
                             type: 'STORAGE_RESTORE_REQUEST',
                             timestamp: Date.now()
@@ -501,9 +481,10 @@
                 };
                 
             } else {
-                // Браузерный режим - показываем инструкции
+                // Браузерный режим - показываем соответствующий контейнер
                 document.getElementById('figmaContainer').classList.add('hidden');
-                document.getElementById('instructionsContainer').style.display = 'flex';
+                showDeviceContainer(deviceInfo);
+                setupEventListeners(deviceInfo);
             }
         }
         
@@ -520,7 +501,6 @@
             initApp();
         }
         
-        // На всякий случай повторная инициализация через секунду
         setTimeout(initApp, 1000);
     </script>
 </body>
