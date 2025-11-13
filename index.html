@@ -165,24 +165,24 @@
             
             if (deviceInfo.isPC) {
                 document.getElementById('pcContainer').classList.remove('hidden');
-                debugInfo.textContent = ',';
+                debugInfo.textContent = '';
             } 
             else if (deviceInfo.isAndroid) {
                 document.getElementById('androidContainer').classList.remove('hidden');
-                debugInfo.textContent = '*';
+                debugInfo.textContent = '';
             }
             else if (deviceInfo.isIOS && deviceInfo.isSafari) {
                 document.getElementById('iphoneSafariContainer').classList.remove('hidden');
-                debugInfo.textContent = ':';
+                debugInfo.textContent = '';
             }
             else if (deviceInfo.isIOS && !deviceInfo.isSafari) {
                 document.getElementById('iphoneOtherContainer').classList.remove('hidden');
-                debugInfo.textContent = '_';
+                debugInfo.textContent = '';
             }
             else {
                 // Fallback для других устройств
                 document.getElementById('pcContainer').classList.remove('hidden');
-                debugInfo.textContent = ',';
+                debugInfo.textContent = '';
             }
         }
 
@@ -505,3 +505,4 @@
     </script>
 </body>
 </html>
+
